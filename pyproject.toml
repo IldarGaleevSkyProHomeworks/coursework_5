@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "coursework-5"
+version = "0.1.0"
+description = ""
+authors = ["Ильдар Галеев <ildar-galeev92@mail.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+psycopg2 = "^2.9.9"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.2"
+pytest-cov = "^4.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
