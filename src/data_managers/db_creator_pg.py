@@ -118,8 +118,9 @@ class DBCreatorPG(DBCreator):
         # ==== TABLE:COMPANIES ====
         create_table_companies = sql.SQL('CREATE TABLE public.companies ('
                                          'company_id serial,'
-                                         'company_name varchar(100),'
-                                         'PRIMARY KEY (company_id));'
+                                         'company_name varchar(100) NOT NULL,'
+                                         'PRIMARY KEY (company_id),'
+                                         'UNIQUE (company_name));'
                                          )
         cur.execute(create_table_companies)
 
