@@ -1,5 +1,3 @@
-import os
-
 import config
 from src.abstractions.db_creator import DBCreator, DBCreatorProp
 import psycopg2
@@ -10,6 +8,8 @@ class DBCreatorPG(DBCreator):
 
     def __init__(self):
         super().__init__()
+
+        self._db_init_script = config.PG_DB_INIT_SCRIPT
 
         app_db_hostname = config.PG_DB_HOSTNAME if config.PG_DB_HOSTNAME else 'localhost'
         app_db_port = config.PG_DB_PORT if config.PG_DB_PORT else '5432'
@@ -106,7 +106,7 @@ class DBCreatorPG(DBCreator):
 
         conn.close()
 
-        # =================== CREATE TABLES =================
+        # =============== EXECUTE INITIAL SCRIPT AS NEW USER =============
 
         conn_props['database'] = dbname
         conn_props['user'] = user
@@ -114,43 +114,6 @@ class DBCreatorPG(DBCreator):
 
         conn = psycopg2.connect(**conn_props)
         cur = conn.cursor()
-
-        # ==== TABLE:COMPANIES ====
-        create_table_companies = sql.SQL('CREATE TABLE public.companies ('
-                                         'company_id serial,'
-                                         'company_name varchar(100) NOT NULL,'
-                                         'PRIMARY KEY (company_id),'
-                                         'UNIQUE (company_name));'
-                                         )
-        cur.execute(create_table_companies)
-
-        # ==== TABLE:CITIES ====
-        create_table_cities = sql.SQL('CREATE TABLE public.cities ('
-                                      'city_id serial,'
-                                      'city_name varchar(100) NOT NULL,'
-                                      'PRIMARY KEY (city_id),'
-                                      'UNIQUE (city_name));'
-                                      )
-        cur.execute(create_table_cities)
-
-        # ==== TABLE:VACANCIES ====
-        create_table_vacancies = sql.SQL('CREATE TABLE public.vacancies ('
-                                         'vacancy_id serial,'
-                                         'provider_vacancy_id integer,'
-                                         'company_id integer,'
-                                         'city_id integer,'
-                                         'salary_from money,'
-                                         'salary_to money,'
-                                         'salary_currency varchar(3),'
-                                         'vacancy_title varchar(250) NOT NULL,'
-                                         'vacancy_url varchar(250),'
-                                         'vacancy_description text,'
-                                         'PRIMARY KEY (vacancy_id),'
-                                         'FOREIGN KEY (city_id) REFERENCES public.cities (city_id),'
-                                         'FOREIGN KEY (company_id) REFERENCES public.companies (company_id));'
-                                         )
-        cur.execute(create_table_vacancies)
-
-        # ==== COMMIT ====
+        cur.execute(open(self._db_init_script, 'r').read())
         conn.commit()
         conn.close()
