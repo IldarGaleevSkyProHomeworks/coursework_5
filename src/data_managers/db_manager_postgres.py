@@ -22,7 +22,17 @@ class DBManagerPG(DBManagerAbstract):
         return con
 
     def get_companies_and_vacancies_count(self):
-        pass
+        con = self._get_connection()
+        cur = con.cursor()
+        cur.execute('(select count(*) from vacancies) union (select count(*) from companies);')
+        con.commit()
+        r = cur.fetchall()
+        con.close()
+        if r:
+            r = (r[0][0], r[1][0])
+        else:
+            r = (0, 0)
+        return {'vacancies': r[0], 'companies': r[1]}
 
     def get_all_vacancies(self):
         pass
