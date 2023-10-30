@@ -1,5 +1,7 @@
 import config
 from src.abstractions.db_manager_abstract import DBManagerAbstract
+from src.entities.currency import Currency
+from src.entities.salary import Salary
 from src.entities.vacancy import Vacancy
 from psycopg2.sql import SQL, Placeholder
 
@@ -35,7 +37,56 @@ class DBManagerPG(DBManagerAbstract):
         return {'vacancies': r[0], 'companies': r[1]}
 
     def get_all_vacancies(self):
-        pass
+        con = self._get_connection()
+        cur = con.cursor()
+        cur.execute(
+            "select "
+            "vacancies.vacancy_title, "
+            "vacancies.vacancy_description, "
+            "vacancies.salary_currency, "
+            "vacancies.salary_from::numeric::float8, "
+            "vacancies.salary_to::numeric::float8, "
+            "vacancies.provider_vacancy_id, "
+            "companies.company_name, "
+            "cities.city_name, "
+            "providers.provider_name, "
+            "vacancies.vacancy_url "
+            "from vacancies "
+            "inner join companies USING (company_id) "
+            "inner join cities USING (city_id) "
+            "inner join providers USING (provider_id);"
+        )
+        con.commit()
+        r = cur.fetchall()
+        con.close()
+
+        result = []
+        if r:
+            result = [Vacancy(
+                vacancy_title,
+                vacancy_description,
+                Salary(
+                    Currency(salary_from, salary_currency) if salary_from else None,
+                    Currency(salary_to, salary_currency) if salary_to else None
+                ),
+                vacancy_url,
+                provider_vacancy_id,
+                company_name,
+                city_name,
+                provider_name,
+                )
+                    for
+                    vacancy_title,
+                    vacancy_description,
+                    salary_currency,
+                    salary_from,
+                    salary_to,
+                    provider_vacancy_id,
+                    company_name,
+                    city_name,
+                    provider_name,
+                    vacancy_url in r]
+        return result
 
     def get_avg_salary(self):
         pass
