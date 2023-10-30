@@ -132,8 +132,8 @@ class DBManagerPG(DBManagerAbstract):
             self.VACANCY_BASE_QUERY +
             SQL(" where ") +
             SQL("or ").join([
-                SQL("vacancies.vacancy_title like {keyword} or vacancies.vacancy_description like {keyword} ").format(
-                    keyword=Literal(f'%{keyword}%')
+                SQL("lower(vacancies.vacancy_title) like {keyword} or lower(vacancies.vacancy_description) like {keyword} ").format(
+                    keyword=Literal(f'%{keyword.lower().strip()}%')
                 ) for keyword in keywords
             ])
         )
