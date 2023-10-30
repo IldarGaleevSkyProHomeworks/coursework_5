@@ -6,7 +6,7 @@ from src.entities.vacancy import Vacancy
 class DBManagerAbstract(ABC):
 
     @abstractmethod
-    def get_companies_and_vacancies_count(self) -> int:
+    def get_companies_and_vacancies_count(self) -> dict:
         pass
 
     @abstractmethod
