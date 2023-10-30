@@ -3,7 +3,7 @@ from src.abstractions.db_manager_abstract import DBManagerAbstract
 from src.entities.currency import Currency
 from src.entities.salary import Salary
 from src.entities.vacancy import Vacancy
-from psycopg2.sql import SQL, Placeholder
+from psycopg2.sql import SQL, Placeholder, Identifier, Literal
 
 import psycopg2
 
@@ -36,25 +36,58 @@ class DBManagerPG(DBManagerAbstract):
             r = (0, 0)
         return {'vacancies': r[0], 'companies': r[1]}
 
+    @staticmethod
+    def _to_vacancy_list(row_data):
+        return [Vacancy(
+            vacancy_title,
+            vacancy_description,
+            Salary(
+                Currency(salary_from, salary_currency) if salary_from else None,
+                Currency(salary_to, salary_currency) if salary_to else None
+            ),
+            vacancy_url,
+            provider_vacancy_id,
+            company_name,
+            city_name,
+            provider_name,
+        )
+            for
+            vacancy_title,
+            vacancy_description,
+            salary_currency,
+            salary_from,
+            salary_to,
+            provider_vacancy_id,
+            company_name,
+            city_name,
+            provider_name,
+            vacancy_url in row_data]
+
+    VACANCY_BASE_QUERY = SQL(
+        "select "
+        "vacancies.vacancy_title, "
+        "vacancies.vacancy_description, "
+        "vacancies.salary_currency, "
+        "vacancies.salary_from::numeric::float8, "
+        "vacancies.salary_to::numeric::float8, "
+        "vacancies.provider_vacancy_id, "
+        "companies.company_name, "
+        "cities.city_name, "
+        "providers.provider_name, "
+        "vacancies.vacancy_url "
+        "from vacancies "
+        "inner join companies USING (company_id) "
+        "inner join cities USING (city_id) "
+        "inner join providers USING (provider_id)"
+    ).format(
+        where_query=Placeholder()
+    )
+
     def get_all_vacancies(self):
         con = self._get_connection()
         cur = con.cursor()
         cur.execute(
-            "select "
-            "vacancies.vacancy_title, "
-            "vacancies.vacancy_description, "
-            "vacancies.salary_currency, "
-            "vacancies.salary_from::numeric::float8, "
-            "vacancies.salary_to::numeric::float8, "
-            "vacancies.provider_vacancy_id, "
-            "companies.company_name, "
-            "cities.city_name, "
-            "providers.provider_name, "
-            "vacancies.vacancy_url "
-            "from vacancies "
-            "inner join companies USING (company_id) "
-            "inner join cities USING (city_id) "
-            "inner join providers USING (provider_id);"
+            self.VACANCY_BASE_QUERY
         )
         con.commit()
         r = cur.fetchall()
@@ -62,30 +95,7 @@ class DBManagerPG(DBManagerAbstract):
 
         result = []
         if r:
-            result = [Vacancy(
-                vacancy_title,
-                vacancy_description,
-                Salary(
-                    Currency(salary_from, salary_currency) if salary_from else None,
-                    Currency(salary_to, salary_currency) if salary_to else None
-                ),
-                vacancy_url,
-                provider_vacancy_id,
-                company_name,
-                city_name,
-                provider_name,
-                )
-                    for
-                    vacancy_title,
-                    vacancy_description,
-                    salary_currency,
-                    salary_from,
-                    salary_to,
-                    provider_vacancy_id,
-                    company_name,
-                    city_name,
-                    provider_name,
-                    vacancy_url in r]
+            result = self._to_vacancy_list(r)
         return result
 
     def get_avg_salary(self):
@@ -94,8 +104,26 @@ class DBManagerPG(DBManagerAbstract):
     def get_vacancies_with_higher_salary(self):
         pass
 
-    def get_vacancies_with_keyword(self):
-        pass
+    def get_vacancies_with_keyword(self, keywords: list[str]):
+        con = self._get_connection()
+        cur = con.cursor()
+        cur.execute(
+            self.VACANCY_BASE_QUERY +
+            SQL(" where ") +
+            SQL("or ").join([
+                SQL("vacancies.vacancy_title like {keyword} or vacancies.vacancy_description like {keyword} ").format(
+                    keyword=Literal(f'%{keyword}%')
+                ) for keyword in keywords
+            ])
+        )
+        con.commit()
+        r = cur.fetchall()
+        con.close()
+
+        result = []
+        if r:
+            result = self._to_vacancy_list(r)
+        return result
 
     def insert_vacancies(self, vacancies: list[Vacancy]):
         con = self._get_connection()
