@@ -2,6 +2,7 @@ from src.abstractions.db_manager_abstract import DBManagerAbstract
 from src.abstractions.vacancy_provider import SearchResult
 from src.entities.vacancy import Vacancy
 from src.providers.vacancy_composer import VacancyComposer
+from src.utils.console_color import FG_GREEN, FG_RESET, FG_MAGENTA, FG_RED, FG_YELLOW
 from src.utils.interaction.utils import user_choice
 
 
@@ -42,16 +43,21 @@ def print_table(data: dict[str, SearchResult], top_count=None) -> list[Vacancy]:
     stat += f'{"Всего": >{max_name_len}}: {total}\n'
 
     # == Table header ==
-    h_line = '-' * (col_size[0] + col_size[1] + col_size[2] + col_size[3] + 5) + '\n'
+    h_line = '-' * (sum(col_size) + len(col_size) * 2 + 2) + '\n'
 
     result = ''
-    result += f'{"ID": >{col_size[0]}} |{"Title": >{col_size[1]}} | {"Salary from": <{col_size[2]}} | {"Salary to": <{col_size[3]}}\n'
+    result += (f'{FG_MAGENTA}'
+               f'{"ID": >{col_size[0]}} | '
+               f'{"Title": >{col_size[1]}} | '
+               f'{"Salary from": <{col_size[2]}} | '
+               f'{"Salary to": <{col_size[3]}}'
+               f'{FG_RESET}\n')
     result += h_line
 
     # == Table rows ==
 
     for index, vacancy in enumerate(vacancy_list):
-        result += (f'{index: >{col_size[0]}} | '
+        result += (f'{FG_GREEN}{index: >{col_size[0]}}{FG_RESET} | '
                    f'{vacancy.title: >{col_size[1]}} | '
                    f'{"-" if vacancy.salary is None or vacancy.salary.salary_from is None else str(vacancy.salary.salary_from): <{col_size[2]}} | '
                    f'{"-" if vacancy.salary is None or vacancy.salary.salary_to is None else str(vacancy.salary.salary_to): <{col_size[3]}}'
@@ -116,12 +122,12 @@ def save_dialog(vacancy_list: list[Vacancy], db_manager: DBManagerAbstract):
             ids = ids.intersection(set(range(len(vacancy_list))))
 
             db_manager.insert_vacancies([vacancy_list[i] for i in ids])
-            print("Вакансии сохранены!")
+            print(f"{FG_GREEN}Вакансии сохранены!{FG_RESET}")
             break
         except ValueError:
-            print("Неверный формат!")
+            print(f"{FG_YELLOW}Неверный формат!{FG_RESET}")
         except Exception as e:
-            print(f"Оооой! Ошибочка! \n{e}\n")
+            print(f"Оооой! Ошибочка!\n{FG_RED}{e}{FG_RESET}")
             break
 
 
@@ -129,6 +135,7 @@ def search_online(vacancy_composer: VacancyComposer, db_manager: DBManagerAbstra
     result = []
     choice = 1
     while True:
+        print()
         match choice:
             case 1:
                 result = search_vacancy(vacancy_composer)
