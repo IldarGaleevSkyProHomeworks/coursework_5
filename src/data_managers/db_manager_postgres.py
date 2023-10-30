@@ -108,7 +108,22 @@ class DBManagerPG(DBManagerAbstract):
         return r[0] if r else None
 
     def get_vacancies_with_higher_salary(self):
-        pass
+        con = self._get_connection()
+        cur = con.cursor()
+        cur.execute(
+            self.VACANCY_BASE_QUERY +
+            SQL(" where salary_from::numeric::float8 >= {avg_salary} ").format(
+                avg_salary=Literal(self.get_avg_salary())
+            )
+        )
+        con.commit()
+        r = cur.fetchall()
+        con.close()
+
+        result = []
+        if r:
+            result = self._to_vacancy_list(r)
+        return result
 
     def get_vacancies_with_keyword(self, keywords: list[str]):
         con = self._get_connection()
