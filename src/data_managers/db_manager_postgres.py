@@ -99,7 +99,13 @@ class DBManagerPG(DBManagerAbstract):
         return result
 
     def get_avg_salary(self):
-        pass
+        con = self._get_connection()
+        cur = con.cursor()
+        cur.execute('select avg(salary_from::numeric::float8) from vacancies;')
+        con.commit()
+        r = cur.fetchone()
+        con.close()
+        return r[0] if r else None
 
     def get_vacancies_with_higher_salary(self):
         pass
