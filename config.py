@@ -10,3 +10,8 @@ PG_DB_NAME = os.getenv('PG_DB_NAME')
 
 # Postgres database initialization script
 PG_DB_INIT_SCRIPT = os.path.join(os.path.dirname(__file__), 'scripts', 'create_database.sql')
+
+# Vacancy providers user-agent string
+APP_NAME = "SkyPro_Coursework5"
+APP_VER = "1.0_Dev"
+APP_EMAIL = "ildar-galeev92@mail.ru"
